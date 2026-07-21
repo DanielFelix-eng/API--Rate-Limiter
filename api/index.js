@@ -1,5 +1,6 @@
 import  express  from  'express' 
 import  dotenv from 'dotenv'
+ import { connectedDB } from './db/db.js';
 dotenv.config();
  
  const app=  express()
@@ -11,6 +12,7 @@ dotenv.config();
     res.send("Welcome to the Home Page!") 
   }) 
   app.listen(PORT, () => { 
+     connectedDB()
     
     console.log("Server started on port 3000") 
   })
