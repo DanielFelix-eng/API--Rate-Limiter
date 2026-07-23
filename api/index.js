@@ -2,7 +2,7 @@ import  express  from  'express'
 import  dotenv from 'dotenv'
  import { connectedDB } from './db/db.js';
   import  cookieParser from 'cookie-parser'
-  import  cors from  cors
+  import  cors from  'cors'
    import  authRoutes  from './routes/authRoute.js';
 dotenv.config();
  
@@ -14,9 +14,9 @@ dotenv.config();
 }))
    
    
-  app.use(express())
+  app.use(express.json())
    app.use(cookieParser()) 
-    app.use('/api/auth',authRoutes)
+    app.use('/api',authRoutes)
   app.get('/', (req, res) => { 
     res.send("Welcome to the Home Page!") 
   }) 

@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
-import organization from './organization.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -68,3 +67,4 @@ userSchema.pre('save', async function () {
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
+export default mongoose.model('User', userSchema);

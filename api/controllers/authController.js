@@ -1,6 +1,7 @@
-import  User from  './models/User.js' 
+import crypto from 'crypto'
+import   User  from '../models/user.js' 
 import { generateToken } from '../utils/setCookies.js'
-import { sendVerificationEmail, welcomeEmail } from '../mail/mail.js'
+import { sendVerificationEmail, welcomeEmail, sendForgotPasswordEmail } from '../mail/mail.js'
    
  export  const  signUp =  async  (req, res)=>{ 
      const{email , name , password} =req.body
@@ -10,22 +11,31 @@ import { sendVerificationEmail, welcomeEmail } from '../mail/mail.js'
           if(userAlreadyExists)  return res.status(400).json({message: 'User already exists'})
          
 
-const verificationCode =  Math.floor(
+const verificationToken =  Math.floor(
     100000 + Math.random() * 900000
   ).toString()
-   const  user =  new  User({email , name , password , verificationCode , 
+   const  user =  new  User({email , name , password , verificationToken , 
     verificationTokenExpire: new Date(Date.now() + 3600000),
      
     })
  await user.save()
   try {
-    await   sendVerificationEmail(user.email, verificationCode)
+    await   sendVerificationEmail(user.email, verificationToken)
   } catch (error) {
     console.error(error)
   } 
 
   const  token =   await  generateToken(res ,user._id)
- } 
+  
+  res.status(201).json({
+    message: 'Account created successfully! Please check your email to verify your account.',
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+    },
+  })
+ }
   export  const  verifyEmail =  async (req,res) =>{
      try {
         const  {code} =  req.body
@@ -33,23 +43,25 @@ if(!code){
      return res.status(400).json({message:"verification code required" })
 }
  const  user =  await User.findOne({
-     verificationCode:code , 
+     verificationToken: code , 
       verificationTokenExpire: { $gt: Date.now() },
 
  }) 
-  if(!user)  return res.statu(400).json({messgae : "Invalid or expired  verificationCode"})
+  if(!user)  return res.status(400).json({message : "Invalid or expired verification code"})
  
-    user.isVerified = true , 
-    user.verificationCode = undefined , 
-     user.verificationTokenExpire = undefined , 
+    user.isVerified = true
+    user.verificationToken = undefined
+     user.verificationTokenExpire = undefined
      await  user.save()
       try {
-        await  welcomeEmail(user.emai , user.name)
+        await  welcomeEmail(user.email , user.name)
       } catch (error) {
-        console.error(Error)
+        console.error(error)
       }
+      res.json({ message: 'Email verified successfully' })
      } catch (error) {
-        console.error(Error)
+        console.error(error)
+        res.status(500).json({ message: 'Internal server error' })
      }
 
      } 
@@ -63,11 +75,11 @@ if(!code){
                   const resetToken = crypto.randomBytes(32).toString('hex')
     const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex')
       user.resetPasswordToken = resetTokenHash
-            user.resetPasswordTokenExpire = new Date(Date.now() + 3600000)
+            user.resetPasswordExpire = new Date(Date.now() + 3600000)
              const resUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`
             await user.save()
             try {
-              await sendResetPasswordEmail(user.email, resUrl)
+              await sendForgotPasswordEmail(user.email, user.name, resUrl)
             } catch (error) {
               console.error(error)
             }
@@ -91,11 +103,14 @@ if(!code){
      } catch (error) {
 
         console.error(error)
-     }     
+     }
+
+     await user.save()
+     res.json({ message: 'Verification email sent' })     
        }
               //resetPassword logic
                export  const  resetPassword =  async (req,res) =>{
-                 const {token , password ,confirmPassword}
+                 const {token , password ,confirmPassword} = req.body
  if (!token || !password || !confirmPassword) {
       return res.status(400).json({ message: 'Token, password, and confirm password are required' })
     }
@@ -133,10 +148,10 @@ if(!code){
                     if(!email || !password){ 
                         return  res.status(400).json({message: 'All fields required'})
                     }
-                     const  user =   User.findOne({email}).select('+password')
-                      if(!user) return res.status(400).json({message:'Invalid credeantils'})
-                 const isMatch  =  await  compare(password, user.password)
-                if(!isMatch) return res.status(400).json({message:'Invalid credeantils'})
+                     const  user =  await User.findOne({email}).select('+password')
+                      if(!user) return res.status(400).json({message:'Invalid credentials'})
+                 const isMatch  =  await  user.comparePassword(password)
+                if(!isMatch) return res.status(400).json({message:'Invalid credentials'})
                  if (!user.isVerified) {
       return res.status(400).json({ message: 'Please verify your email first' })
     }

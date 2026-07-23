@@ -6,7 +6,7 @@ import  express  from 'express'
  )
    router.post('/signUp', signUp)
   router.post('/login', login)
-  router.get('/verifyEmail/:token', verifyEmail)
+  router.post('/verifyEmail', verifyEmail)
   router.post('/resetPassword', resetPassword)
   router.post('/googleAuth', googleAuth)
   router.post('/forgotPassword', forgotPassword)
