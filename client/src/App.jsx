@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import SignUpPage from './pages/signUp.jsx';
 import LoginPage from './pages/login.jsx';
@@ -6,8 +6,15 @@ import VerifyEmailPage from './pages/verifyEmail.jsx';
 import ForgotPasswordPage from './pages/forgotPassword.jsx';
 import ResetPasswordPage from './pages/resetPassword.jsx';
 import DashboardPage from './pages/dashboard/index.jsx';
+import useAuthStore from './stores/useAuthStore.js';
 
 function App() { 
+  const fetchUser = useAuthStore((state) => state.fetchUser);
+
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
+
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-gradient-to-br from-red-950 to-red-900">

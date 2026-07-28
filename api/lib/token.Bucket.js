@@ -39,6 +39,8 @@ if (redisUrl && redisUrl.trim() !== '') {
   console.warn('[redis] REDIS_URL not configured, rate limiting will fail open')
   redis = {
     eval: async () => [1, 999],
+    incr: async () => 1,
+    get: async () => 0,
     on: () => {},
   }
 }
@@ -88,6 +90,22 @@ export async function checkBucket(bucketKey, capacity, refillRate, cost = 1) {
     cost
   )
   return { allowed: allowed === 1, remaining: Math.floor(remaining) }
+}
+export async function recordUsage(apiKeyId) {
+  const month = new Date().toISOString().slice(0, 7);
+  const usageKey = `usage:${apiKeyId}:${month}`;
+  const count = await redis.incr(usageKey);
+  if (count === 1) {
+    await redis.expire(usageKey, 60 * 60 * 24 * 35);
+  }
+  return count;
+}
+
+export async function getUsage(apiKeyId) {
+  const month = new Date().toISOString().slice(0, 7);
+  const usageKey = `usage:${apiKeyId}:${month}`;
+  const count = await redis.get(usageKey);
+  return { month, count: Number(count) || 0 };
 }
 
 export { redis }

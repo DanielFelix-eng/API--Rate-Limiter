@@ -25,17 +25,19 @@ const verificationToken =  Math.floor(
     console.error(error)
   } 
 
-  const  token =   await  generateToken(res ,user._id)
-  
+const token = await generateToken(res, user._id)
+
   res.status(201).json({
+    success: true,
     message: 'Account created successfully! Please check your email to verify your account.',
+    token,
     user: {
       id: user._id,
       name: user.name,
       email: user.email,
     },
   })
- }
+}
   export  const  verifyEmail =  async (req,res) =>{
      try {
         const  {code} =  req.body
@@ -58,7 +60,7 @@ if(!code){
       } catch (error) {
         console.error(error)
       }
-      res.json({ message: 'Email verified successfully' })
+      res.json({ success: true, message: 'Email verified successfully' })
      } catch (error) {
         console.error(error)
         res.status(500).json({ message: 'Internal server error' })
@@ -70,8 +72,8 @@ if(!code){
          const  {email} =req.body 
           if(!email)
              return res.status(400).json({message: "email required" })
-             const user =  await User.findOne({email})
-              if(!user) return res.json({message: "user does not exist"})
+const user = await User.findOne({email})
+               if(!user) return res.json({ success: true, message: "If the email exists, a reset link has been sent" })
                   const resetToken = crypto.randomBytes(32).toString('hex')
     const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex')
       user.resetPasswordToken = resetTokenHash
@@ -83,7 +85,7 @@ if(!code){
             } catch (error) {
               console.error(error)
             }
-            res.json({message: "password reset email sent"})
+            res.json({ success: true, message: 'password reset email sent' })
       }
       //resend verification email logic
        export const resendVerificationEmail =  async (req,res) =>{
@@ -106,7 +108,7 @@ if(!code){
      }
 
      await user.save()
-     res.json({ message: 'Verification email sent' })     
+     res.json({ success: true, message: 'Verification email sent' })     
        }
               //resetPassword logic
                export  const  resetPassword =  async (req,res) =>{
@@ -139,7 +141,7 @@ if(!code){
     user.resetPasswordExpire = undefined
     await user.save()
 
-    res.json({ message: 'Password reset successful' })
+    res.json({ success: true, message: 'Password reset successful' })
                    
                }
                 //login
@@ -156,17 +158,19 @@ if(!code){
       return res.status(400).json({ message: 'Please verify your email first' })
     }
 
-    generateToken(res, user._id)
+generateToken(res, user._id)
     user.lastlogin = new Date()
     await user.save()
 
     res.json({
+      success: true,
       message: 'Login successful',
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-                 }},) 
+      },
+    })
                      }
                  
 

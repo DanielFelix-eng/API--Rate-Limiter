@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate , Link } from 'react-router-dom';
-import apiUtils from '../utils/apiUtils';
+import useAuthStore from '../stores/useAuthStore';
 
 const LoginPage = () => {
+  const login = useAuthStore((state) => state.login);
+  const user = useAuthStore((state) => state.user);
+  const authLoading = useAuthStore((state) => state.loading);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -12,6 +15,12 @@ const LoginPage = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/dashboard');
+    }
+  }, [authLoading, user, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -41,7 +50,7 @@ const LoginPage = () => {
     setErrorMessage('');
 
     try {
-      const data = await apiUtils.login(formData);
+      const data = await login(formData);
       setSuccessMessage(data.message || 'Login successful');
       setTimeout(() => {
         navigate(`/dashboard`);

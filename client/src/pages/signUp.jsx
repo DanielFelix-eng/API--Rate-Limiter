@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate , Link } from 'react-router-dom';
 import apiUtils from '../utils/apiUtils';
+import useAuthStore from '../stores/useAuthStore';
 
 const SignUpPage = () => {
+  const user = useAuthStore((state) => state.user);
+  const authLoading = useAuthStore((state) => state.loading);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -13,6 +16,12 @@ const SignUpPage = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/dashboard');
+    }
+  }, [authLoading, user, navigate]);
 
   const handleChange = (e) => {
     setFormData({

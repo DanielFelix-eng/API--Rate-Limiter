@@ -78,7 +78,7 @@ const ResetPasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-950 to-red-900 py-12 px-4 sm:px- sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-red-950 to-red-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md mx-auto bg-red-900/80 bg-opacity-70 rounded-2xl border border-red-800/50 p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-yellow-200 mb-4">

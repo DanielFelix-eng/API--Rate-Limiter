@@ -1,44 +1,58 @@
-import express from 'express'
-import crypto from 'crypto'
-import ApiKey from '../models/apiKey.js'
-import { verifyToken } from '../middleware/verifyToken.js'
-import { requireApiKey, hashKey } from '../middleware/requireApiKey.js'
 
-const router = express.Router()
 
-router.use(verifyToken)
+import express from 'express';
+import crypto from 'crypto';
+import ApiKey from '../models/ApiKey.js';
+import { verifyToken } from '../middleware/verifyToken.js';
+import { hashKey } from '../middleware/requireApiKey.js';
+import { getUsage } from '../lib/token.Bucket.js';
 
-router.post('/create-apiKey', async (req, res) => {
-  const { name = 'default', capacity = 20, refillRate = 5 } = req.body || {}
+const router = express.Router();
+router.use(verifyToken);
 
-  const rawKey = `rlk_${crypto.randomBytes(24).toString('hex')}`
-  const keyHash = hashKey(rawKey)
+router.post('/', async (req, res) => {
+  const { name = 'default', capacity = 20, refillRate = 5 } = req.body || {};
+  const rawKey = `rlk_${crypto.randomBytes(24).toString('hex')}`;
+  const keyHash = hashKey(rawKey);
 
   const apiKey = await ApiKey.create({
     owner: req.userId,
     name,
     keyHash,
     capacity,
-    refillRate
-  })
+    refillRate,
+  });
 
   res.status(201).json({
+    _id: apiKey._id,
     id: apiKey._id,
     name: apiKey.name,
     capacity: apiKey.capacity,
     refillRate: apiKey.refillRate,
-    key: rawKey
-  })
-})
+    key: rawKey,
+  });
+});
 
-router.get('/get-api', async (req, res) => {
-  const keys = await ApiKey.find({ owner: req.userId }).select('-keyHash')
-  res.json(keys)
-})
+router.get('/', async (req, res) => {
+  const keys = await ApiKey.find({ owner: req.userId }).select('-keyHash');
+  res.json(keys);
+});
 
-router.delete('/delete/:id', async (req, res) => {
-  await ApiKey.findOneAndDelete({ _id: req.params.id, owner: req.userId })
-  res.json({ message: 'API key deleted' })
-})
+router.get('/:id/usage', async (req, res) => {
+  const apiKey = await ApiKey.findOne({ _id: req.params.id, owner: req.userId });
+  if (!apiKey) return res.status(404).json({ error: 'Key not found' });
 
-export default router
+  const usage = await getUsage(apiKey._id);
+  res.json(usage);
+});
+
+router.delete('/:id', async (req, res) => {
+  const apiKey = await ApiKey.findOne({ _id: req.params.id, owner: req.userId });
+  if (!apiKey) return res.status(404).json({ error: 'Key not found' });
+
+  apiKey.active = false;
+  await apiKey.save();
+  res.json({ ok: true });
+});
+
+export default router;
