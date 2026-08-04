@@ -1,30 +1,25 @@
-# Bug Fix Plan - API Rate Limiter - ✅ COMPLETED
+# Theme Migration & Bug Fix Plan
 
-## ✅ Step 1: Fix `api/index.js`
-- [x] Change `app.use('/api/auth', authRoutes)` → `app.use('/api', authRoutes)`
-- [x] Change `app.use(express())` → `app.use(express.json())`
+## Step 1: Create TODO.md tracker (current)
 
-## ✅ Step 2: Fix `api/controllers/authController.js`
-- [x] Add `import crypto from 'crypto'`
-- [x] Fix signUp: add missing `res.status(201).json(...)` response + field names
-- [x] Fix verifyEmail: typos (`res.statu`, `user.emai`, `Error`)
-- [x] Fix login: add `await` on `User.findOne()`, use `user.comparePassword()`
-- [x] Fix forgotPassword: field name `resetPasswordTokenExpire` → `resetPasswordExpire`, use correct mail function (`sendForgotPasswordEmail`)
-- [x] Fix resendVerificationEmail: add `await user.save()` and response
-- [x] Fix all field name inconsistencies (`verificationCode` → `verificationToken`)
-- [x] Fix `console.error(Error)` → `console.error(error)`
+## Step 2: Fix backend issues
+- [ ] Fix `client/src/stores/useAuthStore.js` — add named export for Navbar compatibility
+- [ ] Fix `client/src/components/layout/Layout.jsx` — missing imports (useLocation, Outlet, NavLink)
+- [ ] Fix `client/src/components/layout/Navbar.jsx` — useAuthStore import (default vs named)
 
-## ✅ Step 3: Fix `api/routes/authRoute.js`
-- [x] Change verifyEmail route from GET to POST
+## Step 3: Migrate auth pages to new dark theme
+- [ ] `client/src/App.jsx` — change bg to `bg-bg`
+- [ ] `client/src/pages/login.jsx` — full color migration
+- [ ] `client/src/pages/signUp.jsx` — full color migration
+- [ ] `client/src/pages/forgotPassword.jsx` — full color migration
+- [ ] `client/src/pages/resetPassword.jsx` — full color migration
+- [ ] `client/src/pages/verifyEmail.jsx` — full color migration
 
-## ✅ Step 4: Fix `client/src/pages/verifyEmail.jsx`
-- [x] Add `Link` import
-- [x] Add `errors` state (replaces unused `message`)
+## Step 4: Migrate components to new dark theme
+- [ ] `client/src/components/CreateApiKeyModal.jsx` — full color migration
+- [ ] `client/src/components/ApiKeyCard.jsx` — full color migration
+- [ ] `client/src/components/googleAuth.jsx` — full color migration
 
-## ✅ Step 5: Fix `client/src/pages/resetPassword.jsx`
-- [x] Add `Link` import
-
-## ✅ Step 6: Add missing routes in `client/src/App.jsx`
-- [x] Add routes for /verifyEmail, /forgot-password, /reset-password
-- [x] Add root redirect to /login
+## Step 5: Verify
+- [ ] Start dev server and verify no errors
 
