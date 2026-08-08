@@ -1,122 +1,130 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import apiUtils from '../utils/apiUtils';
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import apiUtils from '../utils/apiUtils'
 
 const VerifyEmailPage = () => {
-  const [code, setCode] = useState('');
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [code, setCode] = useState('')
+  const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   useEffect(() => {
-    // Check if we're coming from a verification email link
-    const token = searchParams.get('token');
-    
-    if (token) {
-      // This is a password reset flow, not email verification
-      // We'll handle it in the reset password page
-      navigate(`/reset-password?token=${token}`, { replace: true });
-    }
-  }, [navigate, searchParams]);
+    const token = searchParams.get('token')
 
-  const handleSubmit = async () => {
-    setLoading(true);
-    setErrorMessage('');
-    setSuccessMessage('');
+    if (token) {
+      navigate(`/reset-password?token=${token}`, { replace: true })
+    }
+  }, [navigate, searchParams])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    const trimmedCode = code.trim()
+    if (!trimmedCode) {
+      setErrorMessage('Please enter the verification code before continuing.')
+      return
+    }
+
+    setLoading(true)
+    setErrorMessage('')
+    setSuccessMessage('')
 
     try {
-      const data = await apiUtils.verifyEmail(code);
-      setSuccessMessage(data.message || 'Email verified successfully!');
+      const data = await apiUtils.verifyEmail(trimmedCode)
+      setSuccessMessage(data.message || 'Email verified successfully!')
       setTimeout(() => {
-        navigate(`/login`);
-      }, 1500);
+        navigate('/')
+      }, 1500)
     } catch (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(error.message || 'Unable to verify your email')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
+
+  const handleResendCode = async () => {
+    if (!email.trim()) {
+      setErrorMessage('Please enter your email address before requesting a new code.')
+      return
+    }
+
+    setLoading(true)
+    setErrorMessage('')
+    setSuccessMessage('')
+
+    try {
+      const data = await apiUtils.resendVerificationEmail(email)
+      setSuccessMessage(data.message || 'A new verification code has been sent.')
+    } catch (error) {
+      setErrorMessage(error.message || 'Unable to resend the verification code')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-950 to-red-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md mx-auto bg-red-900/80 bg-opacity-70 rounded-2xl border border-red-800/50 p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-yellow-200 mb-4">
-            Verify Your Email
-          </h1>
-          <p className="text-yellow-300 mb-6">
-            Please enter the verification code sent to your email
-          </p>
-        </div>
-
-        {errorMessage && (
-          <div className="mb-6 p-4 bg-red-900/30 border border-red-800/50 rounded-xl text-red-300">
-            {errorMessage}
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="mb-6 p-4 bg-green-900/30 border border-green-800/50 rounded-xl text-green-200">
-            {successMessage}
-          </div>
-        )}
-
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          handleSubmit();
-        }} className="space-y-6">
+    <div className="auth-page verify-email-page">
+      <section className="auth-hero" aria-label="Email verification introduction">
+        <div className="brand-block">
+          <div className="brand-mark">✉️</div>
           <div>
-            <label htmlFor="verificationCode" className="block text-sm font-medium text-yellow-200 mb-2">
-              Verification Code
-            </label>
-            <input
-              type="text"
-              id="verificationCode"
-              name="code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="w-full px-4 py-3 bg-red-800/50 border border-red-700/60 rounded-xl text-yellow-100 placeholder-yellow-400/50 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 focus:border-yellow-400 transition-all duration-300"
-              placeholder="Enter verification code"
-              aria-invalid={!!errors.code}
-            >
-            </input>
+            <p className="eyebrow">Almost there</p>
+            <h1>Verify your inbox.</h1>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex justify-center items-center px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-yellow-50 font-semibold rounded-xl text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-yellow-100" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-                </svg>
-                Verifying code...
-              </>
-            ) : (
-              'Verify Email'
-            )}
-          </button>
-        </form>
-
-        <div className="mt-8 text-center text-yellow-300">
-          <p className="text-sm">
-            Didn't receive the code? <Link
-              to="/forgot-password"
-              className="font-medium text-yellow-200 hover:text-yellow-100 transition-colors"
-            >
-              Request a new code
-            </Link>
-          </p>
         </div>
-      </div>
-    </div>
-  );
-};
 
-export default VerifyEmailPage;
+        <p className="hero-copy">
+          Enter the six-digit code we sent to your email to activate your account and continue securely.
+        </p>
+      </section>
+
+      <section className="auth-card">
+        <div className="auth-card-inner">
+          <p className="eyebrow">Email verification</p>
+          <h2>Check your email</h2>
+          <p className="auth-subtitle">We sent a verification code to your inbox. Enter it below to continue.</p>
+
+          {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
+          {successMessage ? <p className="form-success">{successMessage}</p> : null}
+
+          <form className="auth-form" onSubmit={handleSubmit}>
+            <label className="field">
+              <span>Email address</span>
+              <input
+                type="email"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+              />
+            </label>
+
+            <label className="field">
+              <span>Verification code</span>
+              <input
+                type="text"
+                name="code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="Enter 6-digit code"
+              />
+            </label>
+
+            <button type="submit" className="btn btn-primary auth-btn" disabled={loading}>
+              {loading ? 'Verifying...' : 'Verify email'}
+            </button>
+          </form>
+
+          <button type="button" className="link-button" onClick={handleResendCode} disabled={loading}>
+            Request a new code
+          </button>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+export default VerifyEmailPage

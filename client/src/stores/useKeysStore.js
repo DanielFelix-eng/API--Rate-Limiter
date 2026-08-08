@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import apiUtils from '../utils/apiUtils';
 
-const useKeysStore = create((set) => ({
+const useKeysStore = create((set, get) => ({
   keys: [],
   loading: false,
   error: null,
@@ -11,7 +11,7 @@ const useKeysStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await apiUtils.listApiKeys();
-      set({ keys: data || [], loading: false });
+      set({ keys: Array.isArray(data) ? data : [], loading: false });
     } catch (err) {
       set({ error: err.message, keys: [], loading: false });
     }
@@ -67,3 +67,4 @@ const useKeysStore = create((set) => ({
 }));
 
 export default useKeysStore;
+export { useKeysStore };

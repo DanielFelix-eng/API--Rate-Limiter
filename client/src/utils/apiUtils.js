@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = '';
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -20,6 +20,7 @@ async function request(path, options = {}) {
 }
 
 export const apiUtils = {
+  // Auth
   login: (formData) =>
     request('/login', {
       method: 'POST',
@@ -52,6 +53,33 @@ export const apiUtils = {
     request('/verifyEmail', {
       method: 'POST',
       body: JSON.stringify({ code }),
+    }),
+
+  resendVerificationEmail: (email) =>
+    request('/resendVerification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  // API Keys
+  listApiKeys: () => request('/', { method: 'GET' }),
+
+  createApiKey: (formData) =>
+    request('/', {
+      method: 'POST',
+      body: JSON.stringify(formData),
+    }),
+
+  deleteApiKey: (keyId) => request(`/${keyId}`, { method: 'DELETE' }),
+
+  getApiKeyUsage: (keyId) => request(`/${keyId}/usage`, { method: 'GET' }),
+
+  // Rate limit check
+  checkRateLimit: (apiKey, identifier) =>
+    request('/check', {
+      method: 'POST',
+      headers: { 'x-api-key': apiKey },
+      body: JSON.stringify({ identifier }),
     }),
 };
 

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import apiUtils from '../utils/apiUtils';
 
-const useAuthStore = create((set) => ({
+const useAuthStore = create((set, get) => ({
   user: null,
   loading: true,
   error: null,
@@ -32,8 +32,23 @@ const useAuthStore = create((set) => ({
     await apiUtils.logout();
     set({ user: null });
   },
+
+  verifyEmail: async (code) => {
+    return apiUtils.verifyEmail(code);
+  },
+
+  resendVerificationEmail: async (email) => {
+    return apiUtils.resendVerificationEmail(email);
+  },
+
+  forgotPassword: async (formData) => {
+    return apiUtils.forgotPassword(formData);
+  },
+
+  resetPassword: async (token, formData) => {
+    return apiUtils.resetPassword(token, formData);
+  },
 }));
 
 export default useAuthStore;
 export { useAuthStore };
-
