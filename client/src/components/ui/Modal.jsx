@@ -1,16 +1,34 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
 export function Modal({ isOpen, onClose, title, children, footer, size = 'md', showCloseButton = true }) {
   const [mounted, setMounted] = useState(false)
+  const contentRef = useRef(null)
 
   useEffect(() => {
     setMounted(true)
     return () => setMounted(false)
   }, [])
 
+  useEffect(() => {
+    if (!isOpen) return
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', handleEscape)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+      document.body.style.overflow = ''
+    }
+  }, [isOpen, onClose])
+
   if (!mounted) return null
+
+  if (!isOpen) return null
 
   const sizes = {
     sm: 'max-w-sm',
@@ -20,11 +38,17 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md', s
     full: 'max-w-4xl',
   }
 
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
   const content = (
-    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby={title ? 'modal-title' : undefined}>
+    <div className="modal-overlay" onClick={handleOverlayClick} role="dialog" aria-modal="true" aria-labelledby={title ? 'modal-title' : undefined}>
       <div 
+        ref={contentRef}
         className={`modal-content ${sizes[size]} mx-auto my-8`}
-        onClick={(e) => e.stopPropagation()}
       >
         {(title || showCloseButton) && (
           <div className="modal-header">

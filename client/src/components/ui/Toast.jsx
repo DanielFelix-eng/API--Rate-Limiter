@@ -59,14 +59,14 @@ export function useToast() {
 export function ToastContainer() {
   const { toasts, removeToast } = useToast()
 
-  return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none" aria-live="polite" aria-label="Notifications">
+  const content = (
+    <div className="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 pointer-events-none" aria-live="polite" aria-label="Notifications">
       {toasts.map((toast) => {
         const Icon = toastIcons[toast.type] || Info
         return (
           <div
             key={toast.id}
-            className={`toast ${toastClasses[toast.type]} pointer-events-auto animate-slide-in`}
+            className={`toast ${toastClasses[toast.type]} pointer-events-auto`}
             role="alert"
             aria-live="assertive"
           >
@@ -84,6 +84,8 @@ export function ToastContainer() {
       })}
     </div>
   )
+
+  return createPortal(content, document.body)
 }
 
 export function useToastContext() {

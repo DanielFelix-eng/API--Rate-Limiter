@@ -60,15 +60,18 @@ export default function ApiKeysPage() {
 
   const handleRevoke = async () => {
     if (!showRevokeModal) return
-    setRevokingKey(showRevokeModal)
+    const keyId = showRevokeModal
+    setRevokingKey(keyId)
     try {
-      await revokeKey(showRevokeModal)
+      await revokeKey(keyId)
+      // refresh list to ensure UI reflects backend state
+      await fetchKeys()
       success('API key revoked')
+      setShowRevokeModal(null)
     } catch (err) {
       toastError(err.message || 'Failed to revoke API key')
     } finally {
       setRevokingKey(null)
-      setShowRevokeModal(null)
     }
   }
 
@@ -82,11 +85,11 @@ export default function ApiKeysPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="page-title">API Keys</h1>
+        <div className="min-w-0">
+          <h1 className="page-title truncate">API Keys</h1>
           <p className="page-subtitle">Manage your API keys for rate limiting</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
+        <Button onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto">
           <Plus className="w-4 h-4" />
           Create API Key
         </Button>
@@ -121,72 +124,121 @@ export default function ApiKeysPage() {
               className="py-16"
             />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Capacity</th>
-                    <th>Refill Rate</th>
-                    <th>Status</th>
-                    <th>Usage (Month)</th>
-                    <th>Created</th>
-                    <th className="text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {keys.map((key) => {
-                    const usage = usageByKeyId[key._id]
-                    return (
-                      <tr key={key._id}>
-                        <td>
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center">
-                              <Key className="w-4 h-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-text-primary">{key.name || 'Unnamed Key'}</p>
-                              <p className="text-xs text-text-secondary font-mono">{key.key?.slice(0, 12)}...</p>
+            <div className="grid gap-4 md:block">
+              {/* Small screens: stacked cards */}
+              <div className="space-y-3 md:hidden">
+                {keys.map((key) => {
+                  const usage = usageByKeyId[key._id]
+                  return (
+                    <Card key={key._id} className="p-3">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                        <div className="flex items-start gap-3 min-w-0 flex-1">
+                          <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center flex-shrink-0">
+                            <Key className="w-4 h-4 text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-text-primary truncate">{key.name || 'Unnamed Key'}</p>
+                            <p className="text-xs text-text-secondary font-mono truncate">{key.key?.slice(0, 12)}...</p>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <Badge variant={key.active ? 'success' : 'neutral'}>{key.active ? 'Active' : 'Revoked'}</Badge>
+                              <span className="text-text-secondary text-xs whitespace-nowrap">{new Date(key.createdAt).toLocaleDateString()}</span>
                             </div>
                           </div>
-                        </td>
-                        <td><code className="text-sm">{key.capacity}</code></td>
-                        <td><code className="text-sm">{key.refillRate}/sec</code></td>
-                        <td>
-                          <Badge variant={key.active ? 'success' : 'neutral'}>
-                            {key.active ? 'Active' : 'Revoked'}
-                          </Badge>
-                        </td>
-                        <td>
-                          {usage ? (
-                            <span className="font-mono text-sm">{usage.count.toLocaleString()}</span>
-                          ) : (
-                            <span className="text-text-secondary text-sm">-</span>
+                        </div>
+
+                        <div className="flex flex-col sm:items-end gap-2 sm:flex-row w-full sm:w-auto">
+                          <div className="text-sm text-text-secondary text-right sm:text-left">
+                            <div>Capacity: <code className="font-mono">{key.capacity}</code></div>
+                            <div>Refill: <code className="font-mono">{key.refillRate}/sec</code></div>
+                            <div>Usage: <span className="font-mono">{usage ? usage.count.toLocaleString() : '-'}</span></div>
+                          </div>
+                          {key.active && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setShowRevokeModal(key._id)}
+                              disabled={revokingKey === key._id}
+                              aria-label={`Revoke ${key.name || 'key'}`}
+                              className="flex-shrink-0"
+                            >
+                              <Trash2 className="w-4 h-4 text-error" />
+                            </Button>
                           )}
-                        </td>
-                        <td className="text-text-secondary text-sm">
-                          {new Date(key.createdAt).toLocaleDateString()}
-                        </td>
-                        <td>
-                          <div className="flex items-center justify-end gap-2">
-                            {key.active && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setShowRevokeModal(key._id)}
-                                disabled={revokingKey === key._id}
-                                aria-label={`Revoke ${key.name || 'key'}`}
-                              >
-                                <Trash2 className="w-4 h-4 text-error" />
-                              </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  )
+                })}
+              </div>
+
+              {/* Medium+ screens: table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="table min-w-[600px]">
+                  <thead>
+                    <tr>
+                      <th className="min-w-[150px]">Name</th>
+                      <th className="min-w-[100px]">Capacity</th>
+                      <th className="min-w-[120px]">Refill Rate</th>
+                      <th className="min-w-[100px]">Status</th>
+                      <th className="min-w-[120px]">Usage (Month)</th>
+                      <th className="min-w-[130px]">Created</th>
+                      <th className="text-right min-w-[60px]">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {keys.map((key) => {
+                      const usage = usageByKeyId[key._id]
+                      return (
+                        <tr key={key._id}>
+                          <td>
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center flex-shrink-0">
+                                <Key className="w-4 h-4 text-primary" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-medium text-text-primary truncate">{key.name || 'Unnamed Key'}</p>
+                                <p className="text-xs text-text-secondary font-mono truncate">{key.key?.slice(0, 12)}...</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td><code className="text-sm">{key.capacity}</code></td>
+                          <td><code className="text-sm">{key.refillRate}/sec</code></td>
+                          <td>
+                            <Badge variant={key.active ? 'success' : 'neutral'}>
+                              {key.active ? 'Active' : 'Revoked'}
+                            </Badge>
+                          </td>
+                          <td>
+                            {usage ? (
+                              <span className="font-mono text-sm">{usage.count.toLocaleString()}</span>
+                            ) : (
+                              <span className="text-text-secondary text-sm">-</span>
                             )}
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                          <td className="text-text-secondary text-sm whitespace-nowrap">
+                            {new Date(key.createdAt).toLocaleDateString()}
+                          </td>
+                          <td>
+                            <div className="flex items-center justify-end gap-2">
+                              {key.active && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setShowRevokeModal(key._id)}
+                                  disabled={revokingKey === key._id}
+                                  aria-label={`Revoke ${key.name || 'key'}`}
+                                >
+                                  <Trash2 className="w-4 h-4 text-error" />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </CardBody>
@@ -194,15 +246,16 @@ export default function ApiKeysPage() {
 
       {/* Create Key Modal */}
       <Modal
+        key={showCreateModal ? 'create' : 'create-closed'}
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         title="Create API Key"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setShowCreateModal(false)} disabled={creating}>
+            <Button variant="secondary" onClick={() => setShowCreateModal(false)} disabled={creating} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleCreateKey} loading={creating} disabled={creating}>
+            <Button onClick={handleCreateKey} loading={creating} disabled={creating} className="w-full sm:w-auto">
               {creating ? 'Creating...' : 'Create Key'}
             </Button>
           </>
@@ -217,7 +270,7 @@ export default function ApiKeysPage() {
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             hint="A friendly name to identify this key"
           />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Capacity"
               name="capacity"
@@ -247,6 +300,7 @@ export default function ApiKeysPage() {
 
       {/* Show New Key Modal */}
       <Modal
+        key={newKey ? 'new-key' : 'new-key-closed'}
         isOpen={!!newKey}
         onClose={() => { setNewKey(null); setShowKey(false); setCopied(false); }}
         title="API Key Created"
@@ -256,7 +310,7 @@ export default function ApiKeysPage() {
         <div className="space-y-4">
           <div className="p-4 bg-success-bg border border-success-border rounded-lg">
             <div className="flex items-center gap-2 text-success mb-2">
-              <Check className="w-5 h-5" />
+              <Check className="w-5 h-5 flex-shrink-0" />
               <span className="font-medium">Your API key is ready!</span>
             </div>
             <p className="text-sm text-text-secondary">
@@ -269,7 +323,7 @@ export default function ApiKeysPage() {
             <div className="relative">
               <input
                 type={showKey ? 'text' : 'password'}
-                value={newKey.key}
+                value={newKey?.key || ''}
                 readOnly
                 className="input font-mono text-sm pr-12"
                 aria-label="API key"
@@ -286,7 +340,7 @@ export default function ApiKeysPage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => copyToClipboard(newKey.key)}
+                  onClick={() => copyToClipboard(newKey?.key || '')}
                   aria-label={copied ? 'Copied' : 'Copy to clipboard'}
                 >
                   {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
@@ -304,8 +358,8 @@ export default function ApiKeysPage() {
   -d '{"identifier": "user-123"}'`}</code></pre>
           </div>
 
-          <div className="pt-4 border-t border-border flex justify-end">
-            <Button onClick={() => { setNewKey(null); setShowKey(false); setCopied(false); }}>
+          <div className="pt-4 border-t border-border flex flex-col sm:flex-row justify-end gap-3">
+            <Button onClick={() => { setNewKey(null); setShowKey(false); setCopied(false); }} className="w-full sm:w-auto">
               I've saved my key
             </Button>
           </div>
@@ -314,23 +368,24 @@ export default function ApiKeysPage() {
 
       {/* Revoke Confirmation Modal */}
       <Modal
+        key={showRevokeModal ? `revoke-${showRevokeModal}` : 'revoke-closed'}
         isOpen={!!showRevokeModal}
         onClose={() => setShowRevokeModal(null)}
         title="Revoke API Key"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setShowRevokeModal(null)} disabled={revokingKey}>
+            <Button variant="secondary" onClick={() => setShowRevokeModal(null)} disabled={revokingKey} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button variant="danger" onClick={handleRevoke} loading={!!revokingKey}>
+            <Button variant="danger" onClick={handleRevoke} loading={!!revokingKey} className="w-full sm:w-auto">
               Revoke Key
             </Button>
           </>
         }
       >
-        <div className="space-y-3">
+        <div className="space-y-3 text-center">
           <Shield className="w-12 h-12 text-warning mx-auto" />
-          <p className="text-center text-text-secondary">
+          <p className="text-text-secondary">
             Are you sure you want to revoke this API key? This action cannot be undone.
             The key will immediately stop working for all rate limit checks.
           </p>
