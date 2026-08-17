@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, useLocation, Link } from 'react-router-dom'
 import { LayoutDashboard, Key, BarChart3, Settings, FileText, Menu, X, LogOut, User, Bell } from 'lucide-react'
 import { useAuthStore } from '../../stores/useAuthStore'
 
@@ -115,9 +115,7 @@ export function Header({ onToggleSidebar }) {
             <span className="absolute top-1 right-1 w-2 h-2 bg-error rounded-full" aria-label="Unread notifications" />
           </button>
 
-          <div className="flex items-center gap-3 pl-3 border-l border-border lg:hidden" />
-          
-          <div className="hidden lg:flex items-center gap-3">
+          <Link to="/settings" className="flex items-center gap-3 pl-3 border-l border-border lg:hidden">
             <div className="w-9 h-9 rounded-lg bg-primary-light flex items-center justify-center">
               {user?.profilePicture ? (
                 <img src={user.profilePicture} alt="" className="w-9 h-9 rounded-lg" />
@@ -129,7 +127,21 @@ export function Header({ onToggleSidebar }) {
               <p className="text-sm font-medium text-text-primary">{user?.name || 'User'}</p>
               <p className="text-xs text-text-secondary">{user?.email}</p>
             </div>
-          </div>
+          </Link>
+          
+          <Link to="/settings" className="hidden lg:flex items-center gap-3 pl-3 border-l border-border hover:bg-slate-50 rounded-lg p-2 transition-colors">
+            <div className="w-9 h-9 rounded-lg bg-primary-light flex items-center justify-center">
+              {user?.profilePicture ? (
+                <img src={user.profilePicture} alt="" className="w-9 h-9 rounded-lg" />
+              ) : (
+                <User className="w-5 h-5 text-primary" aria-hidden="true" />
+              )}
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-medium text-text-primary">{user?.name || 'User'}</p>
+              <p className="text-xs text-text-secondary">{user?.email}</p>
+            </div>
+          </Link>
         </div>
       </div>
     </header>

@@ -10,17 +10,17 @@ export default function DocsPage() {
         {
           id: 'introduction',
           title: 'Introduction',
-          content: `Welcome to RateLimiter API documentation. RateLimiter helps you protect your APIs with intelligent rate limiting using the token bucket algorithm.`
+          content: `RateLimiter protects your API with a token-bucket rate limiter. Each API key can be configured with a bucket capacity and refill rate, and the backend checks requests with the POST /api/check endpoint.`
         },
         {
           id: 'quickstart',
           title: 'Quick Start',
-          content: `1. Sign up for an account\n2. Create an API key from the dashboard\n3. Include the key in your requests via the \`x-api-key\` header\n4. Start protecting your endpoints!`
+          content: `1. Sign up or log in to the app\n2. Create an API key from the dashboard\n3. Copy the generated key, for example rlk_xxxxxxxxxx\n4. Send the key in the \`x-api-key\` header on each rate-limit check\n5. Use the response to allow or deny the user action for your own service`
         },
         {
           id: 'authentication',
-          title: 'Authentication',
-          content: `All API endpoints (except auth) require authentication via cookie-based JWT. The frontend handles this automatically. For direct API access, use the \`x-api-key\` header with your API key.`
+          title: 'Authentication Model',
+          content: `The backend uses two different auth patterns:\n\n- User dashboard endpoints: protected with a JWT cookie named \`token\`. The browser app handles this automatically.\n- API rate-limit checks: protected with the \`x-api-key\` header. This is the header you send for integration requests.\n\nImportant: the rate-limit endpoint does not read an Authorization header. It reads the raw API key directly from \`x-api-key\`.`
         }
       ]
     },
@@ -30,17 +30,22 @@ export default function DocsPage() {
         {
           id: 'auth-endpoints',
           title: 'Auth Endpoints',
-          content: `\`\`\`\nPOST /api/signUp     - Create account\nPOST /api/login      - Sign in\nPOST /api/logout     - Sign out\nGET  /api/checkAuth  - Check auth status\nPOST /api/verifyEmail - Verify email\nPOST /api/resendVerification - Resend code\nPOST /api/forgotPassword - Request reset\nPOST /api/resetPassword - Reset password\n\`\`\``
+          content: `\`\`\`\nPOST /api/signUp\nPOST /api/login\nPOST /api/logout\nGET  /api/checkAuth\nPOST /api/verifyEmail\nPOST /api/resendVerification\nPOST /api/forgotPassword\nPOST /api/resetPassword\nPOST /api/googleAuth\n\`\`\``
+        },
+        {
+          id: 'google-auth',
+          title: 'Google OAuth',
+          content: `Google OAuth allows users to sign in with their Google account.\n\n\`\`\`\nPOST /api/googleAuth\nBody: { "email", "name", "uid", "photoURL" }\n\`\`\`\n\nThe frontend uses Firebase to authenticate the user, then sends the Google profile data to this endpoint. The backend creates or finds the user, marks them as verified, and returns a JWT cookie.`
         },
         {
           id: 'key-endpoints',
           title: 'API Key Endpoints',
-          content: `\`\`\`\nPOST   /api/           - Create key\nGET    /api/           - List keys\nGET    /api/:id/usage  - Get usage\nDELETE /api/:id        - Revoke key\n\`\`\``
+          content: `These routes require a valid user JWT cookie, because they belong to the authenticated dashboard account.\n\`\`\`\nPOST   /api/               - Create a key\nGET    /api/               - List keys for the current user\nGET    /api/:id/usage      - Get usage data for a key\nDELETE /api/:id            - Revoke a key\n\`\`\`\n\nResponse from key creation includes:\n\`\`\`json\n{\n  "_id": "...",\n  "id": "...",\n  "name": "default",\n  "capacity": 20,\n  "refillRate": 5,\n  "key": "rlk_xxxxxxxxx"\n}\n\`\`\``
         },
         {
           id: 'check-endpoint',
           title: 'Rate Limit Check',
-          content: `\`\`\`\nPOST /api/check\nHeaders: x-api-key: rlk_...\nBody: { "identifier": "user-123" }\nResponse: { "allowed", "remaining", "limit", "retryAfter" }\n\`\`\``
+          content: `\`\`\`\nPOST /api/check\nHeaders:\n  x-api-key: rlk_xxxxxxxxx\nBody:\n  { "identifier": "user-123" }\n\nResponse when allowed:\n  { "allowed": true, "remaining": 19, "limit": 20 }\n\nResponse when blocked:\n  { "allowed": false, "remaining": 0, "limit": 20, "retryAfter": 200 }\n\`\`\`\n\nThe backend also returns headers:\n- X-RateLimit-Limit\n- X-RateLimit-Remaining\n- Retry-After (on 429)`
         }
       ]
     },
@@ -50,37 +55,32 @@ export default function DocsPage() {
         {
           id: 'node',
           title: 'Node.js',
-          content: `\`\`\`javascript\nconst response = await fetch('https://api.ratelimiter.com/api/check', {\n  method: 'POST',\n  headers: {\n    'x-api-key': 'rlk_your_key_here',\n    'Content-Type': 'application/json'\n  },\n  body: JSON.stringify({ identifier: 'user-123' })\n})\n\nconst { allowed, remaining, limit, retryAfter } = await response.json()\n\nif (!allowed) {\n  console.log(\`Rate limited. Retry after \${retryAfter}ms\`)\n  return\n}\n\n// Proceed with request\n\`\`\``
+          content: `\`\`\`javascript\nconst apiKey = 'rlk_your_key_here'\nconst baseUrl = process.env.RATELIMITER_API_URL || 'http://localhost:3000'\n\nconst response = await fetch(baseUrl + '/api/check', {\n  method: 'POST',\n  headers: {\n    'x-api-key': apiKey,\n    'Content-Type': 'application/json'\n  },\n  body: JSON.stringify({ identifier: 'user-123' })\n})\n\nconst data = await response.json()\n\nif (!data.allowed) {\n  console.log('Rate limited. Retry after', data.retryAfter, 'ms')\n  return\n}\n\nconsole.log('Allowed:', data.allowed, 'remaining:', data.remaining)\n\`\`\``
         },
         {
           id: 'python',
           title: 'Python',
-          content: `\`\`\`python\nimport requests\n\nresponse = requests.post(\n    'https://api.ratelimiter.com/api/check',\n    headers={'x-api-key': 'rlk_your_key_here'},\n    json={'identifier': 'user-123'}\n)\n\ndata = response.json()\n\nif not data['allowed']:\n    print(f"Rate limited. Retry after {data['retryAfter']}ms")\n    return\n\n# Proceed with request\n\`\`\``
+          content: `\`\`\`python\nimport os\nimport requests\n\napi_key = 'rlk_your_key_here'\nbase_url = os.getenv('RATELIMITER_API_URL', 'http://localhost:3000')\n\nresponse = requests.post(\n    f'{base_url}/api/check',\n    headers={'x-api-key': api_key},\n    json={'identifier': 'user-123'}\n)\n\ndata = response.json()\n\nif not data['allowed']:\n    print(f"Rate limited. Retry after {data['retryAfter']}ms")\n    raise SystemExit\n\nprint('Allowed:', data['allowed'])\n\`\`\``
         },
         {
           id: 'curl',
           title: 'cURL',
-          content: `\`\`\`bash\ncurl -X POST https://api.ratelimiter.com/api/check \\\n  -H "x-api-key: rlk_your_key_here" \\\n  -H "Content-Type: application/json" \\\n  -d '{"identifier": "user-123"}'\n\`\`\``
+          content: `\`\`\`bash\nBASE_URL=http://localhost:3000\nAPI_KEY=rlk_your_key_here\n\ncurl -X POST $BASE_URL/api/check \\\n  -H "x-api-key: $API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '{"identifier":"user-123"}'\n\`\`\``
         }
       ]
     },
     {
-      title: 'Plans & Limits',
+      title: 'Behavior & Limits',
       sections: [
         {
-          id: 'free',
-          title: 'Free Tier',
-          content: `- 10 API keys\n- 100,000 requests/month\n- Basic analytics\n- Community support`
+          id: 'bucket',
+          title: 'Token Bucket Rules',
+          content: `Each API key owns a token bucket with a configured capacity and refill rate. The app stores values on the key record and applies them to the request identifier.\n\n- capacity: maximum tokens in the bucket\n- refillRate: tokens added per second\n- identifier: optional string used to distinguish users, sessions, or IPs\n\nIf no identifier is supplied, the backend uses the default bucket key.`
         },
         {
-          id: 'pro',
-          title: 'Pro',
-          content: `- Unlimited API keys\n- 10,000,000 requests/month\n- Advanced analytics\n- Priority support\n- Custom rate limit rules`
-        },
-        {
-          id: 'enterprise',
-          title: 'Enterprise',
-          content: `- Unlimited requests\n- Dedicated infrastructure\n- SLA guarantee\n- Custom integrations\n- 24/7 support`
+          id: 'usage',
+          title: 'Usage Tracking',
+          content: `Every successful check records usage for the current month, keyed by API key ID. This data is available through the authenticated usage endpoint:\n\`\`\`\nGET /api/:id/usage\n\`\`\``
         }
       ]
     },
@@ -90,7 +90,7 @@ export default function DocsPage() {
         {
           id: 'errors',
           title: 'Common Errors',
-          content: `\`\`\`\n400 - Bad Request\n401 - Unauthorized (invalid/missing API key)\n403 - Forbidden (key revoked)\n429 - Too Many Requests (rate limited)\n500 - Internal Server Error\n\`\`\`\n\nRate limit response (429):\n\`\`\`json\n{\n  "allowed": false,\n  "remaining": 0,\n  "limit": 20,\n  "retryAfter": 200\n}\n\`\`\``
+          content: `\`\`\`\n400 - Bad Request\n401 - Missing or invalid API key\n403 - Invalid API key or key revoked\n429 - Rate limit exceeded\n500 - Internal server error\n\`\`\`\n\nRate limit response (429):\n\`\`\`json\n{\n  "allowed": false,\n  "remaining": 0,\n  "limit": 20,\n  "retryAfter": 200\n}\n\`\`\``
         }
       ]
     }

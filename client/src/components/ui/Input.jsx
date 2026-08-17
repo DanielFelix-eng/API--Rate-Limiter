@@ -7,6 +7,7 @@ export const Input = forwardRef(function Input({
   className = '', 
   id, 
   leftIcon,
+  rightIcon,
   ...props 
 }, ref) {
   const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
@@ -19,19 +20,26 @@ export const Input = forwardRef(function Input({
         </label>
       )}
       <div className="relative">
-        {leftIcon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" aria-hidden="true">
-            {leftIcon}
-          </div>
-        )}
-        <input
-          ref={ref}
-          id={inputId}
-          className={`input ${error ? 'input-error' : ''} ${leftIcon ? 'pl-10' : ''} ${className}`}
-          aria-invalid={error ? 'true' : 'false'}
-          aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
-          {...props}
-        />
+        <div className="flex items-center">
+          {leftIcon && (
+            <div className="flex items-center justify-center w-10 h-full bg-slate-50 border border-r-0 border-border rounded-l-lg text-text-secondary pointer-events-none" aria-hidden="true">
+              {leftIcon}
+            </div>
+          )}
+          <input
+            ref={ref}
+            id={inputId}
+            className={`input ${error ? 'input-error' : ''} ${leftIcon ? 'pl-0 rounded-l-none' : ''} ${rightIcon ? 'pr-10' : ''} ${className}`}
+            aria-invalid={error ? 'true' : 'false'}
+            aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
+            {...props}
+          />
+          {rightIcon && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" aria-hidden="true">
+              {rightIcon}
+            </div>
+          )}
+        </div>
       </div>
       {error && (
         <p id={`${inputId}-error`} className="mt-1.5 text-sm text-error" role="alert">
