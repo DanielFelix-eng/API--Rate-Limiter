@@ -11,7 +11,7 @@ const navigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
-export function Sidebar({ isOpen, onClose }) {
+export function Sidebar({ isOpen, onClose, className }) {
   const location = useLocation()
   const { user, logout } = useAuthStore()
 
@@ -24,7 +24,7 @@ export function Sidebar({ isOpen, onClose }) {
       />
       
       <aside 
-        className={`fixed lg:sticky top-0 z-50 h-screen w-64 bg-card border-r border-border flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        className={`fixed lg:sticky top-0 z-50 h-screen w-64 bg-card border-r border-border flex flex-col transition-transform duration-300 ease-in-out ${className}`}
         aria-label="Main navigation"
       >
         <div className="flex h-16 items-center justify-between px-4 border-b border-border">
@@ -149,23 +149,104 @@ export function Header({ onToggleSidebar }) {
 }
 
 export function AppLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [width, setWidth] = useState(window.innerWidth)
+  const [sidebarOpenButton, setSidebarOpenButton] = useState(false)
+  const [isHovering, setIsHovering] = useState(false)
+  const [hoverTimeout, setHoverTimeout] = useState(null)
 
+  // Compute if sidebar should be open based on width and state
+  const sidebarOpen = width >= 1024 ? isHovering : sidebarOpenButton
+
+  // Transform class for Sidebar
+  const transformClass = width >= 1024 
+    ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') 
+    : (sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0')
+
+  // Hover handlers
+  const handleEnter = () => {
+    if (width >= 1024) {
+      setIsHovering(true)
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout)
+        setHoverTimeout(null)
+      }
+    }
+  }
+
+  const handleLeave = () => {
+    if (width >= 1024) {
+      setHoverTimeout(
+        setTimeout(() => {
+          setIsHovering(false)
+          setHoverTimeout(null)
+        }, 100)
+      )
+    }
+  }
+
+  // Close handler
+  const handleClose = () => {
+    if (width < 1024) {
+      setSidebarOpenButton(false)
+    } else {
+      setIsHovering(false)
+    }
+  }
+
+  // Toggle handler for small screens
+  const handleToggleSidebar = () => {
+    if (width < 1024) {
+      setSidebarOpenButton(!sidebarOpenButton)
+    }
+  }
+
+  // Resize handler
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setSidebarOpen(false)
+      setWidth(window.innerWidth)
+      // Clear hover timeout if we go below 1024
+      if (window.innerWidth < 1024 && hoverTimeout) {
+        clearTimeout(hoverTimeout)
+        setHoverTimeout(null)
+        setIsHovering(false)
       }
     }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, []) // Remove width and hoverTimeout from deps
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout)
+      }
+    }
+  }, [hoverTimeout])
 
   return (
     <div className="min-h-screen bg-background flex">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {width >= 1024 ? (
+        <div 
+          onMouseEnter={handleEnter}
+          onMouseLeave={handleLeave}
+          className="fixed left-0 top-0 bottom-0 w-64"
+        >
+          <Sidebar 
+            isOpen={sidebarOpen} 
+            onClose={handleClose} 
+            className={transformClass}
+          />
+        </div>
+      ) : (
+        <Sidebar 
+          isOpen={sidebarOpen} 
+          onClose={handleClose} 
+          className={transformClass}
+        />
+      )}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-0">
-        <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        <Header onToggleSidebar={handleToggleSidebar} />
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           <Outlet />
         </main>
