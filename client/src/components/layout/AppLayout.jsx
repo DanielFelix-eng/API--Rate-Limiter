@@ -1,40 +1,59 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation, Link } from 'react-router-dom'
-import { LayoutDashboard, Key, BarChart3, Settings, FileText, Menu, X, LogOut, User, Bell } from 'lucide-react'
+import { 
+  LayoutDashboard, 
+  Key, 
+  Settings, 
+  FileText, 
+  Menu, 
+  X, 
+  LogOut, 
+  User, 
+  Monitor,
+  Circle,
+  TrendingUp
+} from 'lucide-react'
 import { useAuthStore } from '../../stores/useAuthStore'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'API Keys', href: '/api-keys', icon: Key },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Documentation', href: '/docs', icon: FileText },
+  { name: 'Projects', href: '/api-keys', icon: Key },
+  { name: 'Monitoring', href: '/analytics', icon: Monitor },
+  { name: 'Logs', href: '/docs', icon: FileText },
+  { name: 'Analytics', href: '/analytics', icon: TrendingUp },
   { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Profile', href: '/settings', icon: Circle },
 ]
 
-export function Sidebar({ isOpen, onClose, className }) {
+export function Sidebar({ isOpen, onClose, isSmallScreen, isHovering, sidebarOpen }) {
   const location = useLocation()
   const { user, logout } = useAuthStore()
 
   return (
     <>
-      <div 
-        className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      {/* Backdrop for small screens only */}
+      {isSmallScreen && isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-200"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
       
       <aside 
-        className={`fixed lg:sticky top-0 z-50 h-screen w-64 bg-card border-r border-border flex flex-col transition-transform duration-300 ease-in-out ${className}`}
+        className={`fixed top-0 z-50 h-screen flex flex-col transition-transform duration-300 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
+          w-64 bg-card border-r border-border`}
         aria-label="Main navigation"
       >
         <div className="flex h-16 items-center justify-between px-4 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-              <Key className="w-5 h-5 text-white" />
+              <LayoutDashboard className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <p className="text-xs font-semibold text-text-primary tracking-wide">RateLimiter</p>
-              <p className="text-[10px] text-text-secondary">API Protection</p>
+            <div className="overflow-hidden transition-all duration-300">
+              <p className="text-xs font-semibold text-text-primary tracking-wide whitespace-nowrap">RateLimiter</p>
+              <p className="text-[10px] text-text-secondary whitespace-nowrap">API Protection</p>
             </div>
           </div>
           <button
@@ -54,15 +73,31 @@ export function Sidebar({ isOpen, onClose, className }) {
               <NavLink
                 key={item.name}
                 to={item.href}
-                onClick={onClose}
+                onClick={() => {
+                  // Don't close if sidebar is open but not pinned (hover mode on desktop)
+                  if (isOpen && !sidebarOpen && !isSmallScreen) {
+                    return
+                  }
+                  onClose()
+                }}
                 className={({ isActive }) => 
-                  `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+                  `group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 ${
+                    isActive 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'text-text-secondary hover:bg-slate-100 hover:text-text-primary'
+                  }`
                 }
                 aria-current={isActive ? 'page' : undefined}
               >
-                <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-                <span>{item.name}</span>
-                {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true" />}
+                <Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-200 ${
+                  isActive ? 'text-primary' : 'text-text-secondary group-hover:text-text-primary'
+                }`} aria-hidden="true" />
+                <span className="truncate font-medium transition-opacity duration-200">
+                  {item.name}
+                </span>
+                {isActive && (
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true" />
+                )}
               </NavLink>
             )
           })}
@@ -70,17 +105,21 @@ export function Sidebar({ isOpen, onClose, className }) {
 
         <div className="p-4 border-t border-border">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-9 h-9 rounded-lg bg-primary-light flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" aria-hidden="true" />
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              {user?.profilePicture ? (
+                <img src={user.profilePicture} alt="" className="w-9 h-9 rounded-lg" />
+              ) : (
+                <User className="w-5 h-5 text-primary" aria-hidden="true" />
+              )}
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 overflow-hidden">
               <p className="text-sm font-medium text-text-primary truncate">{user?.name || 'User'}</p>
               <p className="text-xs text-text-secondary truncate">{user?.email}</p>
             </div>
           </div>
           <button
             onClick={async () => { await logout(); onClose(); }}
-            className="w-full mt-3 sidebar-link text-error hover:bg-error-bg"
+            className="w-full mt-3 flex items-center gap-3 px-3 py-2 text-left text-text-secondary hover:text-error hover:bg-error/10 rounded-lg transition-colors duration-200"
           >
             <LogOut className="w-5 h-5" aria-hidden="true" />
             <span>Sign out</span>
@@ -91,7 +130,7 @@ export function Sidebar({ isOpen, onClose, className }) {
   )
 }
 
-export function Header({ onToggleSidebar }) {
+export function Header({ onToggleSidebar, sidebarOpen, onMouseEnter }) {
   const { user } = useAuthStore()
 
   return (
@@ -99,22 +138,19 @@ export function Header({ onToggleSidebar }) {
       <div className="flex h-16 items-center justify-between px-4 lg:px-6">
         <div className="flex items-center gap-4">
           <button
-            className="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-text-secondary"
+            className="p-2 rounded-lg hover:bg-slate-100 text-text-secondary transition-colors duration-200"
             onClick={onToggleSidebar}
-            aria-label="Open sidebar"
+            onMouseEnter={onMouseEnter}
+            aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
           >
             <Menu className="w-5 h-5" />
           </button>
+          <div className="lg:hidden flex-1" />
         </div>
 
         <div className="flex-1 lg:flex-none" />
 
         <div className="flex items-center gap-3">
-          <button className="relative p-2 rounded-lg hover:bg-slate-100 text-text-secondary" aria-label="Notifications">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-error rounded-full" aria-label="Unread notifications" />
-          </button>
-
           <Link to="/settings" className="flex items-center gap-3 pl-3 border-l border-border lg:hidden">
             <div className="w-9 h-9 rounded-lg bg-primary-light flex items-center justify-center">
               {user?.profilePicture ? (
@@ -150,21 +186,32 @@ export function Header({ onToggleSidebar }) {
 
 export function AppLayout() {
   const [width, setWidth] = useState(window.innerWidth)
-  const [sidebarOpenButton, setSidebarOpenButton] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
   const [hoverTimeout, setHoverTimeout] = useState(null)
 
-  // Compute if sidebar should be open based on width and state
-  const sidebarOpen = width >= 1024 ? isHovering : sidebarOpenButton
+  // For large screens: sidebar opens on hover, closes when leaving
+  // For small screens: sidebar opens via button click
+  const isSmallScreen = width < 1024
+  
+  // On large screens, sidebar can be toggled by click OR hover
+  // On small screens, only by click
+  const effectiveSidebarOpen = isSmallScreen ? sidebarOpen : (sidebarOpen || isHovering)
 
-  // Transform class for Sidebar
-  const transformClass = width >= 1024 
-    ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') 
-    : (sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0')
+  // Toggle handler - works on all screen sizes
+  const handleToggleSidebar = () => {
+    setSidebarOpen(prev => !prev)
+  }
 
-  // Hover handlers
+  // Close handler
+  const handleClose = () => {
+    setSidebarOpen(false)
+    setIsHovering(false)
+  }
+
+  // Hover handlers (only for large screens)
   const handleEnter = () => {
-    if (width >= 1024) {
+    if (!isSmallScreen) {
       setIsHovering(true)
       if (hoverTimeout) {
         clearTimeout(hoverTimeout)
@@ -173,30 +220,14 @@ export function AppLayout() {
     }
   }
 
-  const handleLeave = () => {
-    if (width >= 1024) {
-      setHoverTimeout(
-        setTimeout(() => {
-          setIsHovering(false)
-          setHoverTimeout(null)
-        }, 100)
-      )
-    }
-  }
-
-  // Close handler
-  const handleClose = () => {
-    if (width < 1024) {
-      setSidebarOpenButton(false)
-    } else {
+  // Close when hovering over main content (or other areas)
+  const handleMainEnter = () => {
+    if (!isSmallScreen) {
       setIsHovering(false)
-    }
-  }
-
-  // Toggle handler for small screens
-  const handleToggleSidebar = () => {
-    if (width < 1024) {
-      setSidebarOpenButton(!sidebarOpenButton)
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout)
+        setHoverTimeout(null)
+      }
     }
   }
 
@@ -204,7 +235,6 @@ export function AppLayout() {
   useEffect(() => {
     const handleResize = () => {
       setWidth(window.innerWidth)
-      // Clear hover timeout if we go below 1024
       if (window.innerWidth < 1024 && hoverTimeout) {
         clearTimeout(hoverTimeout)
         setHoverTimeout(null)
@@ -213,7 +243,7 @@ export function AppLayout() {
     }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, []) // Remove width and hoverTimeout from deps
+  }, [hoverTimeout])
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -226,28 +256,34 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {width >= 1024 ? (
-        <div 
-          onMouseEnter={handleEnter}
-          onMouseLeave={handleLeave}
-          className="fixed left-0 top-0 bottom-0 w-64"
-        >
-          <Sidebar 
-            isOpen={sidebarOpen} 
-            onClose={handleClose} 
-            className={transformClass}
-          />
-        </div>
-      ) : (
+      {isSmallScreen && (
         <Sidebar 
-          isOpen={sidebarOpen} 
+          isOpen={effectiveSidebarOpen} 
           onClose={handleClose} 
-          className={transformClass}
+          isSmallScreen={isSmallScreen}
+          isHovering={isHovering}
+          sidebarOpen={sidebarOpen}
+        />
+      )}
+      {!isSmallScreen && (
+        <Sidebar 
+          isOpen={effectiveSidebarOpen} 
+          onClose={handleClose} 
+          isSmallScreen={isSmallScreen}
+          isHovering={isHovering}
+          sidebarOpen={sidebarOpen}
         />
       )}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-0">
-        <Header onToggleSidebar={handleToggleSidebar} />
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+        <Header 
+          onToggleSidebar={handleToggleSidebar} 
+          sidebarOpen={effectiveSidebarOpen}
+          onMouseEnter={handleEnter}
+        />
+        <main 
+          className="flex-1 p-4 lg:p-6 overflow-auto"
+          onMouseEnter={handleMainEnter}
+        >
           <Outlet />
         </main>
       </div>

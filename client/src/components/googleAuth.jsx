@@ -49,19 +49,15 @@ export default function GoogleAuth() {
   }
 
   return (
-    <div className="social-auth">
-      <div className="social-divider">
-        <span>or</span>
-      </div>
-
+    <>
       <button
         type="button"
         onClick={handleGoogleSignIn}
         disabled={isLoading}
-        className="google-btn"
+        className="w-full inline-flex items-center justify-center font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-card text-text-primary border border-border hover:bg-slate-100 focus:ring-border px-6 py-3 text-base gap-2"
       >
         <span className="google-icon" aria-hidden="true">
-          <svg viewBox="0 0 533.5 544.3" xmlns="http://www.w3.org/2000/svg">
+          <svg viewBox="0 0 533.5 544.3" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5">
             <path fill="#4285F4" d="M533.5 278.4c0-18.3-1.5-36-4.3-53.2H272v100.7h146.9c-6.4 34.7-25.9 64.1-55 83.8v69.6h88.8c52.1-48 82-118.6 82-201z" />
             <path fill="#34A853" d="M272 544.3c74 0 136-24.6 181.4-66.7l-88.8-69.6c-24.6 16.5-56 26.1-92.6 26.1-71 0-131.2-47.9-152.8-112.5H29.8v70.6C74.4 485.1 167 544.3 272 544.3z" />
             <path fill="#FBBC05" d="M119.2 325.6c-8.6-25.6-8.6-53.3 0-78.9V176.1H29.8c-44.4 88.7-44.4 192.8 0 281.5l89.4-70z" />
@@ -72,6 +68,6 @@ export default function GoogleAuth() {
       </button>
 
       {error ? <p className="form-error social-error">{error}</p> : null}
-    </div>
+    </>
   )
 }
