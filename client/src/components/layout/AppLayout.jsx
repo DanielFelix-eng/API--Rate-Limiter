@@ -9,7 +9,6 @@ import {
   X, 
   LogOut, 
   User, 
-  Monitor,
   Circle,
   TrendingUp
 } from 'lucide-react'
@@ -17,9 +16,6 @@ import { useAuthStore } from '../../stores/useAuthStore'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Projects', href: '/api-keys', icon: Key },
-  { name: 'Monitoring', href: '/analytics', icon: Monitor },
-  { name: 'Logs', href: '/docs', icon: FileText },
   { name: 'Analytics', href: '/analytics', icon: TrendingUp },
   { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'Profile', href: '/settings', icon: Circle },

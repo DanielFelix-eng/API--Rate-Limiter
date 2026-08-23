@@ -10,7 +10,7 @@ if (redisUrl && redisUrl.trim() !== '') {
   // Upstash URL format: rediss://:TOKEN@HOST:PORT
   let connectionUrl = redisUrl
   let token = undefined
-  
+
   // For Upstash, extract token from URL if present
   if (redisUrl.startsWith('rediss://:')) {
     // Format: rediss://:TOKEN@HOST:PORT
@@ -20,9 +20,9 @@ if (redisUrl && redisUrl.trim() !== '') {
       connectionUrl = `rediss://${match[2]}`
     }
   }
-  
+
   console.log('[redis] Connecting to:', connectionUrl)
-  
+
   redis = new Redis(connectionUrl, {
     maxRetriesPerRequest: 3,
     retryStrategy: (times) => {
@@ -41,7 +41,7 @@ if (redisUrl && redisUrl.trim() !== '') {
     eval: async () => [1, 999],
     incr: async () => 1,
     get: async () => 0,
-    on: () => {},
+    on: () => { },
   }
 }
 
