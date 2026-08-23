@@ -2,7 +2,7 @@
 
 import express from 'express';
 import crypto from 'crypto';
-import ApiKey from '../models/ApiKey.js';
+import ApiKey from '../models/apiKey.js';
 import { verifyToken } from '../middleware/verifyToken.js';
 import { hashKey } from '../middleware/requireApiKey.js';
 import { getUsage } from '../lib/token.Bucket.js';
