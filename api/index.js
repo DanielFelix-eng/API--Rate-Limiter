@@ -23,8 +23,8 @@ app.use(cookieParser())
 app.get('*', (req, res) => {
 
   res.sendFile(path.join(__dirname, "../client/dist/index.html"))
-}
-)
+})
+
 app.use('/api', authRoutes)
 app.use('/api', checkRoute)
 app.use('/api', keyRoute)
