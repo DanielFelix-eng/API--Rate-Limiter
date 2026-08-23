@@ -6,7 +6,7 @@ import { connectedDB } from './db/db.js'
 import authRoutes from './routes/authRoute.js'
 import checkRoute from './routes/checkRoutes.js'
 import keyRoute from './routes/keyRoutes.js'
-
+import path from 'path'
 const app = express()
 const PORT = process.env.PORT || 3000
 
