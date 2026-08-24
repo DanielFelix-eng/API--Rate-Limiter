@@ -16,27 +16,32 @@ const app = express()
 const PORT = process.env.PORT || 3000
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: [
+    'http://localhost:5173',
+    process.env.CLIENT_URL
+  ],
   credentials: true,
 }))
-app.use(express.static(path.join(__dirname, "../client/dist"))
-)
 
 app.use(express.json())
 app.use(cookieParser())
 
-app.get('/{*any}', (req, res) => {
-  res.sendFile(path.join(__dirname, "../client/dist/index.html"))
-})
-
+// API routes
 app.use('/api', authRoutes)
 app.use('/api', checkRoute)
 app.use('/api', keyRoute)
 
-app.get('/', (req, res) => {
-  res.send('Welcome to the Home Page!')
+// Serve frontend
+app.use(express.static(path.join(__dirname, '../client/dist')))
+
+// React/Vite SPA fallback
+app.get('/*splat', (req, res) => {
+  res.sendFile(
+    path.join(__dirname, '../client/dist/index.html')
+  )
 })
 
+// Start server
 app.listen(PORT, () => {
   connectedDB()
   console.log(`Server started on port ${PORT}`)
