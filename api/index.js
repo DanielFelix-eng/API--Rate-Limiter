@@ -32,10 +32,7 @@ app.use('/api', authRoutes)
 app.use('/api', checkRoute)
 app.use('/api', keyRoute)
 
-// Test route
-app.get('/', (req, res) => {
-  res.send('Server is working 🚀')
-})
+
 
 // Serve React/Vite frontend
 const clientPath = path.join(__dirname, '../client/dist')
