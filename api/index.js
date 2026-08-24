@@ -15,6 +15,7 @@ const __dirname = path.dirname(__filename)
 const app = express()
 const PORT = process.env.PORT || 3000
 
+// Middleware
 app.use(cors({
   origin: [
     'http://localhost:5173',
@@ -31,18 +32,27 @@ app.use('/api', authRoutes)
 app.use('/api', checkRoute)
 app.use('/api', keyRoute)
 
-// Serve frontend
-app.use(express.static(path.join(__dirname, '../client/dist')))
+// Test route
+app.get('/', (req, res) => {
+  res.send('Server is working 🚀')
+})
 
-// React/Vite SPA fallback
+// Serve React/Vite frontend
+const clientPath = path.join(__dirname, '../client/dist')
+
+app.use(express.static(clientPath))
+
+// React Router fallback
 app.get('/*splat', (req, res) => {
-  res.sendFile(
-    path.join(__dirname, '../client/dist/index.html')
-  )
+  res.sendFile(path.join(clientPath, 'index.html'))
 })
 
 // Start server
-app.listen(PORT, () => {
-  connectedDB()
-  console.log(`Server started on port ${PORT}`)
+app.listen(PORT, async () => {
+  try {
+    await connectedDB()
+    console.log(`Server started on port ${PORT}`)
+  } catch (error) {
+    console.error('Database connection failed:', error)
+  }
 })
