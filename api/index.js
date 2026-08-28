@@ -15,17 +15,29 @@ const __dirname = path.dirname(__filename)
 const app = express()
 const PORT = process.env.PORT || 3000
 
+// Allowed origins for CORS
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL
+].filter(Boolean)
+
+console.log('Allowed CORS origins:', allowedOrigins)
+
 // Middleware
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    process.env.CLIENT_URL
-  ],
+  origin: allowedOrigins,
   credentials: true
 }))
 
 app.use(express.json())
 app.use(cookieParser())
+
+// Health check endpoint (for Railway)
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
 
 // API routes
 app.use('/api', authRoutes)
@@ -40,7 +52,7 @@ console.log('Frontend path:', clientPath)
 // Serve frontend files
 app.use(express.static(clientPath))
 
-// Serve React app
+// Serve React app (catch-all for SPA)
 app.get('/*splat', (req, res) => {
   res.sendFile(path.join(clientPath, 'index.html'))
 })
