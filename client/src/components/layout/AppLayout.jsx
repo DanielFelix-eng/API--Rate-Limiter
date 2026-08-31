@@ -17,6 +17,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Analytics', href: '/analytics', icon: TrendingUp },
+  { name: 'Documentation', href: '/docs', icon: FileText },
   { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'Profile', href: '/settings', icon: Circle },
 ]
