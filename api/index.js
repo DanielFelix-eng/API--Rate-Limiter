@@ -19,6 +19,7 @@ const PORT = process.env.PORT || 3000
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
+  'https://api-rate-limiter-production-cd85.up.railway.app',
   process.env.CLIENT_URL,
   process.env.FRONTEND_URL
 ].filter(Boolean)
